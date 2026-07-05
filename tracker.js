@@ -1,16 +1,27 @@
 const http = require('http');
-// This creates a fake web page so Render keeps the script alive for free
-http.createServer((req, res) => res.end('Tracker is running live!')).listen(process.env.PORT || 3000);
-
 const WebSocket = require('ws');
 
-// Connects directly to the stream you found in F12
-const ws = new WebSocket('wss://aviator-next.spribegaming.com/game/ws'); 
+// 1. THE ESSENTIAL FIX: This answers Render's door so it stays alive for free
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Aviator Tracker is Live and Running 24/7!');
+}).listen(process.env.PORT || 3000, () => {
+    console.log('Web server is happy and listening.');
+});
 
-ws.on('message', function incoming(data) {
-    const message = data.toString();
+// 2. RUN YOUR TRACKING LOGIC
+function startTracker() {
+    console.log('Connecting to game stream...');
+    const ws = new WebSocket('wss://aviator-next.spribegaming.com/game/ws'); 
 
-    // 
+    ws.on('open', () => {
+        console.log('Successfully connected to the live stream!');
+    });
+
+    ws.on('message', function incoming(data) {
+        const message = data.toString();
+        
+        // 
 (function () {
   // 1. Defeat Anti-Debugging console.clear() blocks
   const originalClear = console.clear;
@@ -332,14 +343,23 @@ ws.on('message', function incoming(data) {
   injectHUD();
   scanGameInterface();
 })();
-          
-    // Tell it to listen for the crash data strings instead of looking at the screen HTML elements
-    if (message.includes('"type":"crash"')) {
-        console.log("Round finished: " + message);
-    }
-});
+      
+        if (message.includes('"type":"crash"')) {
+            console.log("Round finished: " + message);
+        }
+    });
 
-ws.on('close', () => {
-    // Automatically reconnects if the connection drops
-    setTimeout(() => { process.exit(1); }, 1000); 
-});
+    ws.on('error', (error) => {
+        console.log('Stream error: ' + error.message);
+    });
+
+    ws.on('close', () => {
+        console.log('Stream closed. Retrying connection in 5 seconds...');
+        // FIXED: Instead of killing the server with process.exit(1), 
+        // we just wait 5 seconds and try to connect again quietly.
+        setTimeout(startTracker, 5000); 
+    });
+}
+
+// Start the tracker loop
+startTracker();
