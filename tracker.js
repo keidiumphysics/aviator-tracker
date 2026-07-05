@@ -1,3 +1,7 @@
+const http = require('http');
+// This creates a fake web page so Render keeps the script alive for free
+http.createServer((req, res) => res.end('Tracker is running live!')).listen(process.env.PORT || 3000);
+
 const WebSocket = require('ws');
 
 // Connects directly to the stream you found in F12
