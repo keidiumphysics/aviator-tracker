@@ -1,10 +1,9 @@
 {
   "name": "aviator-tracker",
   "version": "1.0.0",
-  "description": "",
   "main": "tracker.js",
   "dependencies": {
-    "ws": "^8.13.0"
+    "puppeteer": "^22.0.0"
   },
   "scripts": {
     "start": "node tracker.js"
